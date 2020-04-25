@@ -12,7 +12,7 @@ With the increasing concern about the COVID-19 pandemic, researchers have been p
 
 In addition, we adopted the framework of *Joint Event and Temporal Relation Extraction with Shared Representations and Structured Prediction (Han et al.)*, where trigger and edge detections are trained in a multitask setting.
 
-<p align="center"><img src="https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/1e60ed5b66f1cb8df30e77820f53a036c2d35d3c/3-Figure2-1.png"   style="margin:auto"></p>
+<p align="center"><img src="joint.png"   style="margin:auto"></p>
 
 ## Instructions
 
