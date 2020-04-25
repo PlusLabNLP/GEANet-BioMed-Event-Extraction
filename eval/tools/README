@@ -1,0 +1,55 @@
+Tools for the GENIA event extraction task of BioNLP Shared Task 2011
+
+- version: 1.0
+- release: 13 February, 2011
+
+
+This package includes the following files:
+
+README		This file.
+a2-normalize.pl	A tool for format checking and normalization.
+a2-decompose.pl A tool for event decomposition.
+a2-evaluate.pl	A tool for evaluation.
+a2d-evaluate.pl	A tool for evaluation of decomposed events.
+eventview	A simple text-based event viewer
+
+
+[HISTORY]
+22 Feb. 1st Revision
+	- A new evaluation mode added.
+	  (Approximated Span without Event Trigger Matching)
+
+15 Feb. Initial Release
+
+
+
+[INSTALLATION]
+Uncompress all the files in a directory and set $PATH to include it.
+
+
+[USAGE]
+Use 'a2-evalute.pl' to get the evaluation results, e.g.
+
+> a2-evaluate.pl -g gold-devel -t1 my_predicted_devel/*.a2
+(to evaluate task 1 in the strict evaluation mode)
+
+> a2-evaluate.pl -g gold-devel -t2 -sp my_prediction_eval/*.a2
+(to evaluate task 2 in the approximate span and recursive mode)
+
+> a2-decompose.pl gold-devel/*.a2
+> a2-decompose.pl my_prediction_eval/*.a2
+(to prepare the evaluation of decomposed events) 
+
+> a2-evaluate.pl -g gold-devel -S my_prediction_eval/*.a2d
+(to evaluate task 1 with event decomposition in the approximate span mode
+without event trigger matching)
+
+
+[LICENSE]
+There is no restriction on the usage of the tools included in this package,
+including their modification and re-distribution.
+
+
+[REFERENCE]
+For more details, please refer to the shared task homepage:
+https://sites.google.com/site/bionlpst/
