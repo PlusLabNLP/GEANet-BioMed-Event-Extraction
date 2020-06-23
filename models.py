@@ -19,7 +19,10 @@ from torch.nn import CrossEntropyLoss, MSELoss, BCELoss
 import copy
 from transformers.modeling_bert import BertIntermediate, BertOutput, BertLayer, BertSelfOutput, BertLayer
 from collections import defaultdict
-from torch_geometric.nn import GraphConv, TopKPooling, GatedGraphConv, SAGEConv, NNConv, GCNConv, GraphUNet, GATConv
+try:
+    from torch_geometric.nn import GraphConv, TopKPooling, GatedGraphConv, SAGEConv, NNConv, GCNConv, GraphUNet, GATConv
+except:
+    pass
 
 BERT_PRETRAINED_MODEL_ARCHIVE_MAP = {
     'bert-base-uncased': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-pytorch_model.bin",

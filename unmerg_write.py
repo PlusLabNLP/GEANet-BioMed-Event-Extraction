@@ -166,12 +166,14 @@ def heu_for_unmerge(arg_combs, d):
     return final_combs
 
 def is_terminal(event):
+    
     if 'Theme' not in event:
         return False
     targets = []
     for k, v in list(event.items()):
         if k.startswith('Theme') or k == 'Cause':
             targets.append(v)
+    # print(targets)
     return all([i.startswith('T') for i in targets])
 
 
@@ -202,6 +204,7 @@ def map_theme_for_bind(cur_comb):
 
 def writeA2(orig_docid, args, triggerIdBySpan, triggerTypeBySpan, all_events):
     triggerIdBySpan = OrderedDict(sorted(list(triggerIdBySpan.items()), key=lambda x:int(x[0].split('-')[0])))
+    print(all_events)
     with open(f'{args.input_dir}/{orig_docid}.txt','r') as f:
         origial_texts = f.read()
 
@@ -286,7 +289,7 @@ if __name__ == '__main__':
 
     # clear out everything
     
-    shutil.rmtree(args.out_dir, ignore_errors=True)
+    # shutil.rmtree(args.out_dir, ignore_errors=True)
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -322,257 +325,263 @@ if __name__ == '__main__':
 
     print('Finding events ...')
     for doc_id in list(protIdBySpan.keys()): # doc_id: GE09.d1
-        try:
-            doc_sents = [i for i in data if i[0] == doc_id]
-            
-            # sort the doc with sentence order
-            doc_sents = sorted(doc_sents, key=lambda x: int(x[0].split('.')[-1][1:]))
+        # try:
+        doc_sents = [i for i in data if i[0] == doc_id]
+        
+        # sort the doc with sentence order
+        doc_sents = sorted(doc_sents, key=lambda x: int(x[0].split('.')[-1][1:]))
 
-            doc_prots = protIdBySpan[doc_id]    # doc_prots: e.g. '1-3':'10086.T1'
-            
-            orig_docid = origIdById[doc_id]
-            # orig_docid = doc_prots.values()[0].split('.')[0]
-            if len(list(doc_prots.values())) == 0:
-                # doc does not have Proteins
-                f = open('{}/{}.a2'.format(args.out_dir, orig_docid), 'w')
-                f.close()
-                continue
-            # orig_docid = doc_prots.values()[0].split('.')[0]
-            # find the proteins annotated in .a1 file
-            # then decide the start id of trigger
-            
-            trigger_id = 1 + max([int(i.split('.')[-1][1:]) for i in list(doc_prots.values())])
+        doc_prots = protIdBySpan[doc_id]    # doc_prots: e.g. '1-3':'10086.T1'
+        
+        # print(origIdById)
+        orig_docid = origIdById[doc_id]
+        # orig_docid = doc_prots.values()[0].split('.')[0]
+        if len(list(doc_prots.values())) == 0:
+            # doc does not have Proteins
+            f = open('{}/{}.a2'.format(args.out_dir, orig_docid), 'w')
+            f.close()
+            continue
+        # orig_docid = doc_prots.values()[0].split('.')[0]
+        # find the proteins annotated in .a1 file
+        # then decide the start id of trigger
+        
+        trigger_id = 1 + max([int(i.split('.')[-1][1:]) for i in list(doc_prots.values())])
 
-            # event_id = 1
-            triggerIdBySpan = {}
-            triggerTypeBySpan = {}
-            tokenBySpan = {}
-            eventIdsBySpan = defaultdict(list)
-            # eventSTById = defaultdict(dict)
+        # event_id = 1
+        triggerIdBySpan = {}
+        triggerTypeBySpan = {}
+        tokenBySpan = {}
+        eventIdsBySpan = defaultdict(list)
+        # eventSTById = defaultdict(dict)
 
-            # eventsBySpan = defaultdict(list)
-            events = []
-            event_id = 1
-            # if orig_docid =='PMC1074505.d2':
-            #     print(doc_prots)
-            #     print(trigger_id)
+        # eventsBySpan = defaultdict(list)
+        events = []
+        event_id = 1
+        # if orig_docid =='PMC1074505.d2':
+        #     print(doc_prots)
+        #     print(trigger_id)
+        
+        for d in doc_sents:
+            trigger_types = d[3]
+            spans = d[6]
             
-            for d in doc_sents:
-                trigger_types = d[3]
-                spans = d[6]
+            tokens = d[1]
+            int_idxs = d[4]
+            int_labels = d[5]
+            arg_combs = d[-1]
+            
+            
+            # from collections import Counter
+            # print(Counter(trigger_types))
+            assert len(trigger_types) == len(spans)
+            assert len(spans) == len(tokens)
+
+            for idx in range(len(trigger_types)):
+                if trigger_types[idx] in ['Protein', 'Entity', 'None']:
+                    # skip triggers that are not events
+                    # these include None, Protein, Entity
+                    continue
+                if len([i for i in arg_combs if i[0][0][0] == idx]) == 0:
+                    # no valid event for this trigger
+                    continue
                 
-                tokens = d[1]
-                int_idxs = d[4]
-                int_labels = d[5]
-                arg_combs = d[-1]
+                assert spans[idx] not in triggerIdBySpan
+                triggerIdBySpan[spans[idx]] = 'T{}'.format(trigger_id)
+                triggerTypeBySpan[spans[idx]] = trigger_types[idx]
+                tokenBySpan[spans[idx]] = tokens[idx]
+                trigger_id += 1
+            
+            # pdb.set_trace()
+            ############ step1: find all terminal events (leaf)
+            for idx in range(len(trigger_types)):
+                cur_combs = [i for i in arg_combs if i[0][0][0] == idx]
+                # if spans[idx] == '':
+                #     pdb.set_trace()
                 
-                # from collections import Counter
-                # print(Counter(trigger_types))
-                assert len(trigger_types) == len(spans)
-                assert len(spans) == len(tokens)
-
-                for idx in range(len(trigger_types)):
-                    if trigger_types[idx] in ['Protein', 'Entity', 'None']:
-                        # skip triggers that are not events
-                        # these include None, Protein, Entity
-                        continue
-                    if len([i for i in arg_combs if i[0][0][0] == idx]) == 0:
-                        # no valid event for this trigger
-                        continue
+                for cur_comb in cur_combs:
+                    event = {}
+                    if trigger_types[idx] == 'Binding':
+                        # map theme back to theme2 ... for Binding event
+                        cur_comb = map_theme_for_bind(cur_comb)
+                    event['trigger_span'] = spans[idx]
+                    event['trigger_type'] = trigger_types[idx]
                     
-                    assert spans[idx] not in triggerIdBySpan
-                    triggerIdBySpan[spans[idx]] = 'T{}'.format(trigger_id)
-                    triggerTypeBySpan[spans[idx]] = trigger_types[idx]
-                    tokenBySpan[spans[idx]] = tokens[idx]
-                    trigger_id += 1
-                
-                # pdb.set_trace()
-                ############ step1: find all terminal events (leaf)
-                for idx in range(len(trigger_types)):
-                    cur_combs = [i for i in arg_combs if i[0][0][0] == idx]
-                    # if spans[idx] == '':
-                    #     pdb.set_trace()
-                    for cur_comb in cur_combs:
-                        event = {}
-                        if trigger_types[idx] == 'Binding':
-                            # map theme back to theme2 ... for Binding event
-                            cur_comb = map_theme_for_bind(cur_comb)
-                        event['trigger_span'] = spans[idx]
-                        event['trigger_type'] = trigger_types[idx]
-                        for edge in cur_comb:
-                            assert edge[0][0] == idx
-                            target_idx = edge[0][1]
-                            target_span = spans[target_idx]
-                            arg_role = edge[1]
+                    for edge in cur_comb:
+                        assert edge[0][0] == idx
+                        target_idx = edge[0][1]
+                        target_span = spans[target_idx]
+                        arg_role = edge[1]
+                        
+                        if target_span in triggerIdBySpan and target_span in doc_prots:
+                            # it is a nesting parent, its target is presented by span for now
+                            # for predicted case, a protein location can be predicted as event
+                            # we select protein instead
                             
-                            if target_span in triggerIdBySpan and target_span in doc_prots:
-                                # it is a nesting parent, its target is presented by span for now
-                                # for predicted case, a protein location can be predicted as event
-                                # we select protein instead
-                                event[arg_role] = doc_prots[target_span].split('.')[-1]
-                            elif target_span in doc_prots:
-                                # it points to Protein, replace with the protein ID
-                                event[arg_role] = doc_prots[target_span].split('.')[-1]
-                            elif target_span in triggerIdBySpan:
-                                event[arg_role] = target_span
-                            else:
-                                # wrong prediction, in gold the target_span should be a event trigger but the predicted target_span position
-                                # is None(not picked up by model, then this target_span will not be present in triggerIdBySpan, also not in doc_prots
-                                # or the predicted target_span corresponds to a non-valid event(e.g. gene_exp with inter-sent protein theme)
-                                continue
-                                # pass
-
-                        # if d[0] == 'GE09.d235.s11':
-                        #     pdb.set_trace()
-                        if is_terminal(event):
-                            event['ST_id'] = 'E{}'.format(event_id)  # Assign event ids for terminal events
-                            eventIdsBySpan[spans[idx]].append(event['ST_id'])
-                            event_id += 1
+                            event[arg_role] = doc_prots[target_span].split('.')[-1]
+                        elif target_span in doc_prots:
+                            # it points to Protein, replace with the protein ID
+                            event[arg_role] = doc_prots[target_span].split('.')[-1]
+                        elif target_span in triggerIdBySpan:
+                            event[arg_role] = target_span
                         else:
-                            event['ST_id'] = 'X'  # Nesting events, Id To be determined later
-                        # Think about this!!!!!!!!!!!
-                        # if 'Theme' not in event and 'Cause' in event:
-                        #     pdb.set_trace()
-                        # NOTE: need to think about this !!!!!!!!!!!!!!!!!!!
-                        # is it valid to have this artificial screening?
-                        # predicted event might not have a theme edge, see above
-                        # pdb.set_trace()
-                        if not 'Theme' in event:
+                            # wrong prediction, in gold the target_span should be a event trigger but the predicted target_span position
+                            # is None(not picked up by model, then this target_span will not be present in triggerIdBySpan, also not in doc_prots
+                            # or the predicted target_span corresponds to a non-valid event(e.g. gene_exp with inter-sent protein theme)
                             continue
-                        events.append(event)
+                            # pass
 
-
-            ######### step2: find all nesting events via maintaining a stack
-            event_cand_stack = [i for i in events if i['ST_id'] == 'X']
-            new_events = []
-            # print(event_cand_stack)
-            # if len(event_cand_stack) > 0:
-            #     pdb.set_trace()
-            # print(event_id)
-            # if orig_docid == 'PMID-8895544':
-            #     pdb.set_trace()
-            while event_cand_stack:
-                remove = [False] * len(event_cand_stack)
-                # pre_len = len(remove)  #record state of remove mask
-                for idx in range(len(event_cand_stack)):
-                    cur_event = event_cand_stack[idx]
-                    # NOTE: Need to think about it!!!!!!!!!!!
-                    # mis-classified event trigger type, the predicted events might say a Gene_expression will also nests other events
-                    # so this assertion is commented for now
-                    # TODO: this assertion does not hold for predicted case - WHY??????
-                    # assert cur_event['trigger_type'] in REG, pdb.set_trace()
-                    try:
-                        theme_target_span = cur_event['Theme']
-                    except:
-                        pdb.set_trace()
-                    cause_target_span = cur_event.get('Cause', None)
-
-                    # pdb.set_trace()
-                    if cause_target_span:
-                        if cause_target_span.startswith('T'):
-                            # a protein
-                            cause_target_ids = [cause_target_span]
-                        else:
-                            cause_target_ids = eventIdsBySpan.get(cause_target_span, None)
-                    else:
-                        cause_target_ids = None
-                    if theme_target_span.startswith('T'):
-                        theme_target_ids = [theme_target_span]
-                    else:
-                        theme_target_ids = eventIdsBySpan.get(theme_target_span, None)
-                    if cause_target_span:
-                        if theme_target_ids is not None and cause_target_ids is not None:
-                            # both theme and cause point to (known) child trigger
-                            new_combs = [(x, y) for x in theme_target_ids for y in cause_target_ids]
-                            # TODO: this is a simple heuristic to avoid overly dense output
-                            # need to reengineer later
-                            # if len(new_combs) >= 8:
-                            #     continue
-                            for i in range(len(new_combs)):
-                                new_event = {}
-                                new_event['trigger_type'] = cur_event['trigger_type']
-                                new_event['trigger_span'] = cur_event['trigger_span']
-                                assert cause_target_span
-                                new_event['Cause'] = new_combs[i][1]
-                                new_event['Theme'] = new_combs[i][0]
-                                new_event['ST_id'] = 'E{}'.format(event_id)
-                                eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
-                                event_id += 1
-                                new_events.append(new_event)
-                                # the parent events have been found and added
-                                remove[idx] = True
-                                if not check_newevent(new_event):
-                                    pdb.set_trace()
-                    else:
-                        # no cause arg
-                        if theme_target_ids is not None:
-                            # only theme point to a (known) child event trigger
-                            # TODO: this is a simple heuristic to avoid overly dense output
-                            # need to reengineer later
-                            # if len(theme_target_ids) >= 8:
-                            #     continue
-                            for i in range(len(theme_target_ids)):
-                                new_event = {}
-                                new_event['trigger_type'] = cur_event['trigger_type']
-                                new_event['trigger_span'] = cur_event['trigger_span']
-                                # if cause_target_span:
-                                #     new_event['Cause'] = cur_event['Cause']
-                                new_event['Theme'] = theme_target_ids[i]
-                                new_event['ST_id'] = 'E{}'.format(event_id)
-                                eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
-                                event_id += 1
-                                new_events.append(new_event)
-                                # the parent events have been found and added
-                                remove[idx] = True
-                                if not check_newevent(new_event):
-                                    pdb.set_trace()
-                    # elif cause_target_ids is not None and theme_target_ids is None:
-                    #     # only Cause point to a (known) child event trigger
-                    #     for i in range(len(cause_target_ids)):
-                    #         new_event = {}
-                    #         new_event['trigger_type'] = cur_event['trigger_type']
-                    #         new_event['trigger_span'] = cur_event['trigger_span']
-                    #         if theme_target_span:
-                    #             new_event['Theme'] = cur_event['Theme']
-                    #         new_event['Cause'] = cause_target_ids[i]
-                    #         new_event['ST_id'] = 'E{}'.format(event_id)
-                    #         eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
-                    #         event_id += 1
-                    #         new_events.append(new_event)
-                    #         # the parent events have been found and added
-                    #         remove[idx] = True
-                    #         if not check_newevent(new_event):
-                    #             pdb.set_trace()
-                    # else:
-                    #     # target spans are unknown, meaning the child is not known yet
-                    #     continue
-                    # if orig_docid == 'PMID-8895544':
+                    # if d[0] == 'GE09.d235.s11':
                     #     pdb.set_trace()
-                event_cand_stack = [event_cand_stack[i] for i in range(len(event_cand_stack)) if remove[i] == False]
-                if set(remove) == set([False]): #and len(remove) == prev_len:
-                    # found the root(s), no more update
-                    break
-            # print(len(event_cand_stack), len([i for i in event_cand_stack if i['ST_id'] == 'X']))
-            # if len(event_cand_stack) > 0 :
-            #     pdb.set_trace()
-            
-            all_events = [event for event in events+new_events if event['ST_id'] != 'X']
-            
-            for event in all_events:
-                if event['trigger_type'] not in REG:
-                    assert 'Cause' not in event
-                    for k,v in list(event.items()):
-                        if k.startswith('Theme'):
-                            assert event[k].startswith('T') or event[k].startswith('E')
-                if (not event['Theme'].startswith('T')) and (not event['Theme'].startswith('E')):
-                    assert event['trigger_type'] in REG, pdb.set_trace()
-                for k, v in list(event.items()):
-                    if k.startswith('Theme') or k == 'Cause':
-                        assert event[k] not in eventIdsBySpan
+                    # print(cur_comb, is_terminal(event))
+                    if is_terminal(event):
+                        event['ST_id'] = 'E{}'.format(event_id)  # Assign event ids for terminal events
+                        eventIdsBySpan[spans[idx]].append(event['ST_id'])
+                        event_id += 1
+                    else:
+                        event['ST_id'] = 'X'  # Nesting events, Id To be determined later
+                    # Think about this!!!!!!!!!!!
+                    # if 'Theme' not in event and 'Cause' in event:
+                    #     pdb.set_trace()
+                    # NOTE: need to think about this !!!!!!!!!!!!!!!!!!!
+                    # is it valid to have this artificial screening?
+                    # predicted event might not have a theme edge, see above
                     # pdb.set_trace()
+                    if not 'Theme' in event:
+                        continue
+                    events.append(event)
 
-            
-            
-            writeA2(orig_docid, args, triggerIdBySpan, triggerTypeBySpan, all_events)
-        except Exception as e:
-            print(e)
+
+        ######### step2: find all nesting events via maintaining a stack
+        event_cand_stack = [i for i in events if i['ST_id'] == 'X']
+        new_events = []
+        # print(event_cand_stack)
+        # if len(event_cand_stack) > 0:
+        #     pdb.set_trace()
+        # print(event_id)
+        # if orig_docid == 'PMID-8895544':
+        #     pdb.set_trace()
+        while event_cand_stack:
+            remove = [False] * len(event_cand_stack)
+            # pre_len = len(remove)  #record state of remove mask
+            for idx in range(len(event_cand_stack)):
+                cur_event = event_cand_stack[idx]
+                # NOTE: Need to think about it!!!!!!!!!!!
+                # mis-classified event trigger type, the predicted events might say a Gene_expression will also nests other events
+                # so this assertion is commented for now
+                # TODO: this assertion does not hold for predicted case - WHY??????
+                # assert cur_event['trigger_type'] in REG, pdb.set_trace()
+                try:
+                    theme_target_span = cur_event['Theme']
+                except:
+                    pdb.set_trace()
+                cause_target_span = cur_event.get('Cause', None)
+
+                # pdb.set_trace()
+                if cause_target_span:
+                    if cause_target_span.startswith('T'):
+                        # a protein
+                        cause_target_ids = [cause_target_span]
+                    else:
+                        cause_target_ids = eventIdsBySpan.get(cause_target_span, None)
+                else:
+                    cause_target_ids = None
+                if theme_target_span.startswith('T'):
+                    theme_target_ids = [theme_target_span]
+                else:
+                    theme_target_ids = eventIdsBySpan.get(theme_target_span, None)
+                if cause_target_span:
+                    if theme_target_ids is not None and cause_target_ids is not None:
+                        # both theme and cause point to (known) child trigger
+                        new_combs = [(x, y) for x in theme_target_ids for y in cause_target_ids]
+                        # TODO: this is a simple heuristic to avoid overly dense output
+                        # need to reengineer later
+                        # if len(new_combs) >= 8:
+                        #     continue
+                        for i in range(len(new_combs)):
+                            new_event = {}
+                            new_event['trigger_type'] = cur_event['trigger_type']
+                            new_event['trigger_span'] = cur_event['trigger_span']
+                            assert cause_target_span
+                            new_event['Cause'] = new_combs[i][1]
+                            new_event['Theme'] = new_combs[i][0]
+                            new_event['ST_id'] = 'E{}'.format(event_id)
+                            eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
+                            event_id += 1
+                            new_events.append(new_event)
+                            # the parent events have been found and added
+                            remove[idx] = True
+                            if not check_newevent(new_event):
+                                pdb.set_trace()
+                else:
+                    # no cause arg
+                    if theme_target_ids is not None:
+                        # only theme point to a (known) child event trigger
+                        # TODO: this is a simple heuristic to avoid overly dense output
+                        # need to reengineer later
+                        # if len(theme_target_ids) >= 8:
+                        #     continue
+                        for i in range(len(theme_target_ids)):
+                            new_event = {}
+                            new_event['trigger_type'] = cur_event['trigger_type']
+                            new_event['trigger_span'] = cur_event['trigger_span']
+                            # if cause_target_span:
+                            #     new_event['Cause'] = cur_event['Cause']
+                            new_event['Theme'] = theme_target_ids[i]
+                            new_event['ST_id'] = 'E{}'.format(event_id)
+                            eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
+                            event_id += 1
+                            new_events.append(new_event)
+                            # the parent events have been found and added
+                            remove[idx] = True
+                            if not check_newevent(new_event):
+                                pdb.set_trace()
+                # elif cause_target_ids is not None and theme_target_ids is None:
+                #     # only Cause point to a (known) child event trigger
+                #     for i in range(len(cause_target_ids)):
+                #         new_event = {}
+                #         new_event['trigger_type'] = cur_event['trigger_type']
+                #         new_event['trigger_span'] = cur_event['trigger_span']
+                #         if theme_target_span:
+                #             new_event['Theme'] = cur_event['Theme']
+                #         new_event['Cause'] = cause_target_ids[i]
+                #         new_event['ST_id'] = 'E{}'.format(event_id)
+                #         eventIdsBySpan[cur_event['trigger_span']].append(new_event['ST_id'])
+                #         event_id += 1
+                #         new_events.append(new_event)
+                #         # the parent events have been found and added
+                #         remove[idx] = True
+                #         if not check_newevent(new_event):
+                #             pdb.set_trace()
+                # else:
+                #     # target spans are unknown, meaning the child is not known yet
+                #     continue
+                # if orig_docid == 'PMID-8895544':
+                #     pdb.set_trace()
+            event_cand_stack = [event_cand_stack[i] for i in range(len(event_cand_stack)) if remove[i] == False]
+            if set(remove) == set([False]): #and len(remove) == prev_len:
+                # found the root(s), no more update
+                break
+        # print(len(event_cand_stack), len([i for i in event_cand_stack if i['ST_id'] == 'X']))
+        # if len(event_cand_stack) > 0 :
+        #     pdb.set_trace()
+        
+        all_events = [event for event in events+new_events if event['ST_id'] != 'X']
+        
+        for event in all_events:
+            if event['trigger_type'] not in REG:
+                assert 'Cause' not in event
+                for k,v in list(event.items()):
+                    if k.startswith('Theme'):
+                        assert event[k].startswith('T') or event[k].startswith('E')
+            if (not event['Theme'].startswith('T')) and (not event['Theme'].startswith('E')):
+                assert event['trigger_type'] in REG, pdb.set_trace()
+            for k, v in list(event.items()):
+                if k.startswith('Theme') or k == 'Cause':
+                    assert event[k] not in eventIdsBySpan
+                # pdb.set_trace()
+
+        
+        
+        writeA2(orig_docid, args, triggerIdBySpan, triggerTypeBySpan, all_events)
+        # except Exception as e:
+        #     print(e)
