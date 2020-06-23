@@ -64,5 +64,4 @@ Currently, this repo contains only the fine-tuned SciBERT on the GENIA dataset, 
 | Model        | Dev Set F1           | Test Set F1  |
 | ------------- |-------------:| -----:|
 |   SciBERT Baseline    | 59.33      |   58.50  |
-|   SciBERT w/ UMLS & GNN (coming soon)   | **60.38** | **60.06** |
 | [Previous SOTA](https://www.aclweb.org/anthology/N19-1145.pdf) | N/A      |   58.65  |
