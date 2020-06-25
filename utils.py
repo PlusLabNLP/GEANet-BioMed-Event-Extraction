@@ -26,8 +26,8 @@ NER_tagger = spacy.load('en_ner_jnlpba_md')
 
 
 # load bert tokenizer
-# bert_dir = 'allenai/scibert_scivocab_uncased'
-bert_dir = '../GE_event/bert_weights/scibert_scivocab_uncased'
+bert_dir = 'allenai/scibert_scivocab_uncased'
+# bert_dir = '../GE_event/bert_weights/scibert_scivocab_uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_dir)
 
 # df that map CUI to STY
