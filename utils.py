@@ -72,7 +72,7 @@ def generate_sentence_instance(document, sentence, doc_id, ent_char2_id_map, cor
     sent_start = sentence.start_char
     entities = filter_protein_entities(entities, document)
     # don't consider sentence with no entity 
-    if len(entities) == 0: return None
+    # if len(entities) == 0: return None
     
     # obtain the text of this sentence
     text = str(sentence)
@@ -90,9 +90,12 @@ def generate_sentence_instance(document, sentence, doc_id, ent_char2_id_map, cor
     
 
     # split sentence into sub-sentences
-    segment_numbers = [0]+\
-    np.hstack([[entity.start_char - sent_start, entity.end_char - sent_start]  for entity in entities ]).tolist()\
-    + [len(text)+1]   
+    if len(entities) > 0:
+        segment_numbers = [0]+\
+        np.hstack([[entity.start_char - sent_start, entity.end_char - sent_start]  for entity in entities ]).tolist()\
+        + [len(text)+1]   
+    else:
+        segment_numbers = [0]
     
     sub_sentences = [text[start:end] for start, end in zip(segment_numbers[:-1], segment_numbers[1:])]
 
@@ -276,8 +279,10 @@ def preprocess_input(document, doc_id, output_dir):
 
     doc_result_dict, preprocess_result = process_document(document, doc_id, output_dir, corpus_proteinOrigIdBySpan)
     for sent_result_dict in doc_result_dict:
-        for key, value in sent_result_dict.items():
-            all_result_dict[key].append(value)
+        # make sure this contains something
+        if sent_result_dict is not None:
+            for key, value in sent_result_dict.items():
+                all_result_dict[key].append(value)
     all_result_dict['sample_ids'] = np.arange(len(all_result_dict['tokenized_ids'])).tolist()
 
     # create directory

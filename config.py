@@ -36,7 +36,7 @@ class Configuration:
         self.nt_cls=False
         self.edge_cls=False
         self.mnc=False
-        self.gpu='0'
+        self.gpu=''
         self.gnn_type='ECGAT'
         self.local_rank=-1
         self.gradient_accumulation_steps=1

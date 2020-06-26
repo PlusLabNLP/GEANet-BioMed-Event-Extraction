@@ -212,9 +212,11 @@ def create_json_output(tmp_file_dir, doc_id):
     res = []
     with open(f'{tmp_file_dir}/{doc_id}.a1','r') as f:
         lines = [re.split('\s', line.strip()) for line in f.readlines()]
-
-    with open(f'{tmp_file_dir}/{doc_id}.a2','r') as f:
-        lines += [re.split('\s', line.strip()) for line in f.readlines()]
+    try:
+        with open(f'{tmp_file_dir}/{doc_id}.a2','r') as f:
+            lines += [re.split('\s', line.strip()) for line in f.readlines()]
+    except:
+        print("no event predicted")
     
     with open(f'{tmp_file_dir}/{doc_id}_preprocess_result.pkl','rb') as f:
         preprocess_result = pickle.load(f)
@@ -363,4 +365,4 @@ def biomedical_evet_extraction(user_input):
     return output
 
 ##
-biomedical_evet_extraction("BMP-6 inhibits growth of mature human B cells; induction of Smad phosphorylation and upregulation of Id1.")
+biomedical_evet_extraction("We show that ligand-induced homodimerization of chimeric surface receptors consisting of the extracellular and transmembrane domains of the erythropoietin receptor and of the intracellular domain of IL-4Ralpha induces Janus kinase 1 (Jak1) activation, STAT6 activation, and Cepsilon germline transcripts in human B cell line BJAB.")
