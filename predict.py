@@ -207,11 +207,16 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def create_json_output(tmp_file_dir, doc_id):
+
     '''
     Read in a1, a2, and char2token_map files and generate output.
     returns:
         res: a list of dictionary. Keys: {"tokens": [], "events": [], "ner": [[]]}
     '''
+
+    def same_event(event1, event2):
+        return event1['triggers'] == event2['triggers'] and event1['event_type'] == event2['event_type'] and event1['arguments'] == event2['arguments']
+
     res = []
     with open(f'{tmp_file_dir}/{doc_id}.a1','r') as f:
         lines = [re.split('\s', line.strip()) for line in f.readlines()]
@@ -291,9 +296,18 @@ def create_json_output(tmp_file_dir, doc_id):
                     'end_token': char2senttoken_map[list(char2senttoken_map.keys())[bisect_right(list(char2senttoken_map.keys()), entity_map[entity_id][1] -1) -1]]
                 }
                 current_event['arguments'].append(current_argumet)
-            res[sentence_idx]['events'].append(current_event)
 
+            duplicate_event = False
+            # make sure the current event is not the same as any other events:
+            for prev_event in res[sentence_idx]['events']:
+                if same_event(prev_event, current_event):
+                    duplicate_event = True
+                    break
+            
+            if not duplicate_event:
+                res[sentence_idx]['events'].append(current_event)
 
+    
     return res
     
 def biomedical_evet_extraction(user_input):
@@ -360,13 +374,13 @@ def biomedical_evet_extraction(user_input):
     output = create_json_output(tmp_file_dir, doc_id)
     
     # delete genereated intermediate files
-    for filename in glob.glob(tmp_file_dir):
-        if doc_id in filename:
-            os.remove(filename) 
+    # for filename in glob.glob(tmp_file_dir):
+    #     if doc_id in filename:
+    #         os.remove(filename) 
 
     print(output)
     return output
 
 ##
 # print(torch.cuda.is_available())
-biomedical_evet_extraction("We show that ligand-induced homodimerization of chimeric surface receptors consisting of the extracellular and transmembrane domains of the erythropoietin receptor and of the intracellular domain of IL-4Ralpha induces Janus kinase 1 (Jak1) activation, STAT6 activation, and Cepsilon germline transcripts in human B cell line BJAB.")
+biomedical_evet_extraction("This region is termed the CK-1 or CD28RE and appears to bind specific members of the NF-kappa B family of transcription factors. Human T leukemia virus type 1 (HTLV-1) infects T cells and can lead to increase GM-CSF expression.")
