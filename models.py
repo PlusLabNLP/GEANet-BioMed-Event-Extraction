@@ -544,9 +544,9 @@ class MultitaskClassifierBase(nn.Module):
             y_trues_r, y_preds_r = [], []
             for step, batch in enumerate(tqdm(dev_dataloader, desc='Prediction')):
             
-                
-                # put the variables onto GPU
-                batch = tuple(t.cuda() for t in batch)
+                if torch.cuda.is_available():
+                    # put the variables onto GPU
+                    batch = tuple(t.cuda() for t in batch)
                 
                 dev_input_ids, dev_input_masks, dev_segment_ids, dev_entity_labels, dev_sample_ids = batch
                 

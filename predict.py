@@ -103,10 +103,13 @@ def main(args, tmp_file_dir):
         
         output_model_file = os.path.join(args.model_dir, "pytorch_model.bin")
         
-        checkpoint = torch.load(output_model_file)
+        if torch.cuda.is_available():
+            checkpoint = torch.load(output_model_file)
+        else:
+            checkpoint = torch.load(output_model_file, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint)
-
-        model.cuda()
+        if torch.cuda.is_available():
+            model.cuda()
         model.eval()
         gold=False
         y_trues_e, y_preds_e, y_trues_r, y_preds_r, data_out = model.predict(test_dataloader, gold, args, test=True, eval_kg_datas=test_kg_datas)
@@ -365,4 +368,5 @@ def biomedical_evet_extraction(user_input):
     return output
 
 ##
+# print(torch.cuda.is_available())
 biomedical_evet_extraction("We show that ligand-induced homodimerization of chimeric surface receptors consisting of the extracellular and transmembrane domains of the erythropoietin receptor and of the intracellular domain of IL-4Ralpha induces Janus kinase 1 (Jak1) activation, STAT6 activation, and Cepsilon germline transcripts in human B cell line BJAB.")
