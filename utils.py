@@ -236,18 +236,18 @@ def process_document(document, doc_id, output_dir, corpus_proteinOrigIdBySpan):
     document_entities = filter_protein_entities(document.ents, document)
 
     # a list of list of tokens
-    tokens = [[str(tok) for tok in sent] for sent in document.sents]
+    tokens = [str(tok) for tok in document]
 
     sentence_offsets = [sent[0].idx for sent in document.sents]
     # token index 2 entity map
     tokidx2ent_map = {token_idx: token.ent_type_ for token_idx, token in enumerate(document)}
 
     # create character offset to sentence-token index map
-    char2senttoken_map = {tok.idx:sent_tok_id for sent in document.sents for sent_tok_id, tok in enumerate(sent)}
+    char2doctoken_map = {tok.idx:doc_tok_id for doc_tok_id, tok in enumerate(document)}
 
     # ner for each sentence.
     # -sent.start to convert to sentence-level anntation
-    ner = [[[ent.start - sent.start, ent.end-1-sent.start, tokidx2ent_map[ent.start]] for ent in sent.ents] for sent in document.sents]
+    ner = [[ent.start , ent.end-1, tokidx2ent_map[ent.start]] for ent in document.ents]
 
     # create mapping from starting character position to entity id
     ent_char2_id_map = {ent.start_char:f'T{idx+1}' for idx, ent in enumerate(document_entities)}
@@ -262,7 +262,7 @@ def process_document(document, doc_id, output_dir, corpus_proteinOrigIdBySpan):
     preprocess_result = {
         'ner':ner,
         'tokens':tokens,
-        'char2senttoken_map':char2senttoken_map,
+        'char2doctoken_map':char2doctoken_map,
         'sentence_offsets':sentence_offsets
     }
 

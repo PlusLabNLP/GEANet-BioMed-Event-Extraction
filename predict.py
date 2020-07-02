@@ -217,7 +217,7 @@ def create_json_output(tmp_file_dir, doc_id):
     def same_event(event1, event2):
         return event1['triggers'] == event2['triggers'] and event1['event_type'] == event2['event_type'] and event1['arguments'] == event2['arguments']
 
-    res = []
+    res = [{}]
     with open(f'{tmp_file_dir}/{doc_id}.a1','r') as f:
         lines = [re.split('\s', line.strip()) for line in f.readlines()]
     try:
@@ -236,20 +236,23 @@ def create_json_output(tmp_file_dir, doc_id):
 
     tokens = preprocess_result['tokens']
     ner = preprocess_result['ner']
-    char2senttoken_map = preprocess_result['char2senttoken_map']
+    char2doctoken_map = preprocess_result['char2doctoken_map']
     sentence_offsets = preprocess_result['sentence_offsets']
 
     # create a list of character offset for each first token in each sentence to determine which sentence the event belongs to
     
 
     # constuct output
-    for tok, ne in zip(tokens, ner):
-        cur = {
-            'tokens':tok,
-            'events':[],
-            'ner':ne
-        }
-        res.append(cur)
+    # for tok, ne in zip(tokens, ner):
+    #     cur = {
+    #         'tokens':tok,
+    #         'events':[],
+    #         'ner':ne
+    #     }
+    #     res.append(cur)
+    res[0]['tokens'] = tokens
+    res[0]['events'] = []
+    res[0]['ner'] = ner
 
     # constrcut event
     for line in lines:
@@ -272,15 +275,15 @@ def create_json_output(tmp_file_dir, doc_id):
             trigger_start_char_offset = entity_map[entity_id][0]
 
             # find which sentence this event belongs to.
-            sentence_idx = bisect_right(sentence_offsets, trigger_start_char_offset) - 1
+            sentence_idx = 0
 
             current_event['event_type'] = event_type
             current_event['triggers'] = [{'event_type':event_type,
                          'text': entity_map[entity_id][2],
-                         'start_token': char2senttoken_map[list(char2senttoken_map.keys())[bisect_right(list(char2senttoken_map.keys()), entity_map[entity_id][0]) - 1]],
+                         'start_token': char2doctoken_map[list(char2doctoken_map.keys())[bisect_right(list(char2doctoken_map.keys()), entity_map[entity_id][0]) - 1]],
 
                          # the first -1 is for go back one character because GENIA annotation at the character level is exlusive at the end i.e. [start, end)
-                         'end_token': char2senttoken_map[list(char2senttoken_map.keys())[bisect_right(list(char2senttoken_map.keys()), entity_map[entity_id][1] -1) -1]]
+                         'end_token': char2doctoken_map[list(char2doctoken_map.keys())[bisect_right(list(char2doctoken_map.keys()), entity_map[entity_id][1] -1) -1]]
                           }]
 
             current_event['arguments'] = []
@@ -291,9 +294,9 @@ def create_json_output(tmp_file_dir, doc_id):
                 current_argumet = {
                     'role':role,
                     'text': entity_map[entity_id][2],
-                    'start_token': char2senttoken_map[list(char2senttoken_map.keys())[bisect_right(list(char2senttoken_map.keys()), entity_map[entity_id][0]) - 1]],
+                    'start_token': char2doctoken_map[list(char2doctoken_map.keys())[bisect_right(list(char2doctoken_map.keys()), entity_map[entity_id][0]) - 1]],
                     # the first -1 is for go back one character because GENIA annotation at the character level is exlusive at the end i.e. [start, end)
-                    'end_token': char2senttoken_map[list(char2senttoken_map.keys())[bisect_right(list(char2senttoken_map.keys()), entity_map[entity_id][1] -1) -1]]
+                    'end_token': char2doctoken_map[list(char2doctoken_map.keys())[bisect_right(list(char2doctoken_map.keys()), entity_map[entity_id][1] -1) -1]]
                 }
                 current_event['arguments'].append(current_argumet)
 
@@ -383,4 +386,4 @@ def biomedical_evet_extraction(user_input):
 
 ##
 # print(torch.cuda.is_available())
-biomedical_evet_extraction("This region is termed the CK-1 or CD28RE and appears to bind specific members of the NF-kappa B family of transcription factors. Human T leukemia virus type 1 (HTLV-1) infects T cells and can lead to increase GM-CSF expression.")
+biomedical_evet_extraction("The B cells were found to express BMP type I and type II receptors and BMP-6 rapidly induced phosphorylation of Smad1/5/8.")
