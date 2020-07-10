@@ -295,78 +295,80 @@ def create_json_output(tmp_file_dir, doc_id):
 
 
     return res
+
+class BioMedEventExAPI():
+    def __init__(self, base_dir):
+        self.args = Configuration()
+        self.args.base_dir = base_dir
+
+        # detertmine the prefix for processed data based on the model name
+        if 'biobert_large' in self.args.model:
+            prefix = 'GE11_biobert_large'
+        elif 'biobert' in self.args.model:
+            prefix = 'GE11_biobert_v1.1_pubmed'
+        elif 'scibert' in self.args.model:
+            prefix = 'GE11_scibert_scivocab_uncased'
+        elif 'bert' in self.args.model:
+            prefix = 'GE11_bert-base-uncased'
+        else:
+            raise NotImplementedError
+
+        #args.eval_gold = True if args.pipe_epoch >= 1000 else False
+        self.args.SIMPLE = ['Gene_expression', 'Transcription', 'Protein_catabolism', 'Localization', 'Phosphorylation']
+        self.args.REG = ['Negative_regulation', 'Positive_regulation', 'Regulation']
+        self.args.BIND = ['Binding']
+
+        np.random.seed(self.args.random_seed)
+        torch.manual_seed(self.args.random_seed)
+
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = self.args.gpu
+
+    def pred(self, user_input):
+        '''
+        user_input: str. A biomedical corpus to run event extraction pipeline on.
+        '''
+        args = self.args
+        # name the document based on time & sha256 hash append the .d0 for unmerging to work
+        doc_id = hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest() + '.d0'
+        args.doc_id = doc_id
+
+        tmp_file_dir = 'tmp'
+        os.makedirs(tmp_file_dir, exist_ok=True)
+
+        # store doc_id to txt
+        with open(f'{tmp_file_dir}/{doc_id}.txt','w') as f:
+            f.write(user_input)
     
-def biomedical_evet_extraction(user_input):
-    '''
-    user_input: str. A biomedical corpus to run event extraction pipeline on.
-    '''
-    args = Configuration()
+        args.data_dir = tmp_file_dir
+        args.model_dir = os.path.join(args.base_dir, "weights/pipeline_scibert_batch_4_lr_3e-5_epochs100_pepochs100_seed_42_dp0.1_know-false_kg_emb300_ent1000_rel300")
+
+        # remove '\n' which can break the system 
+        user_input = user_input.replace('\n',' ')
     
+        # preprocess the data and store in 4 different files
+        preprocess_input(user_input, doc_id, tmp_file_dir)
 
-    # detertmine the prefix for processed data based on the model name
-    if 'biobert_large' in args.model:
-        prefix = 'GE11_biobert_large'
-    elif 'biobert' in args.model:
-        prefix = 'GE11_biobert_v1.1_pubmed'
-    elif 'scibert' in args.model:
-        prefix = 'GE11_scibert_scivocab_uncased'
-    elif 'bert' in args.model:
-        prefix = 'GE11_bert-base-uncased'
-    else:
-        raise NotImplementedError
+        # input & output
+        args.test_pkl = f'{doc_id}.pkl'
+        args.out_test_pkl = f'{doc_id}_merged.pkl'
 
-    #args.eval_gold = True if args.pipe_epoch >= 1000 else False
-    args.SIMPLE = ['Gene_expression', 'Transcription', 'Protein_catabolism', 'Localization', 'Phosphorylation']
-    args.REG = ['Negative_regulation', 'Positive_regulation', 'Regulation']
-    args.BIND = ['Binding']
+        # run event extraction    
+        main(args, tmp_file_dir)
 
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-
-    # name the document based on time & sha256 hash append the .d0 for unmerging to work
-    doc_id = hashlib.sha256(str(time.time()).encode('utf-8')).hexdigest() + '.d0'
-    args.doc_id = doc_id
-
-    tmp_file_dir = 'tmp'
-    os.makedirs(tmp_file_dir, exist_ok=True)
-
-    # store doc_id to txt
-    with open(f'{tmp_file_dir}/{doc_id}.txt','w') as f:
-        f.write(user_input)
+        # read a2 and output json    
+        output = create_json_output(tmp_file_dir, doc_id)
     
-    
-    
-    args.data_dir = tmp_file_dir
-    args.model_dir = "weights/pipeline_scibert_batch_4_lr_3e-5_epochs100_pepochs100_seed_42_dp0.1_know-false_kg_emb300_ent1000_rel300"
+        # delete genereated intermediate files
+        for filename in glob.glob(tmp_file_dir):
+            if doc_id in filename:
+                os.remove(filename) 
 
-    # remove '\n' which can break the system 
-    user_input = user_input.replace('\n',' ')
-    
+        print(output)
+        return output
 
-    # preprocess the data and store in 4 different files
-    preprocess_input(user_input, doc_id, tmp_file_dir)
-
-    # input & output
-    args.test_pkl = f'{doc_id}.pkl'
-    args.out_test_pkl = f'{doc_id}_merged.pkl'
-
-    # run event extraction    
-    main(args, tmp_file_dir)
-
-    # read a2 and output json    
-    output = create_json_output(tmp_file_dir, doc_id)
-    
-    # delete genereated intermediate files
-    for filename in glob.glob(tmp_file_dir):
-        if doc_id in filename:
-            os.remove(filename) 
-
-    print(output)
-    return output
-
-##
-# print(torch.cuda.is_available())
-biomedical_evet_extraction("We show that ligand-induced homodimerization of chimeric surface receptors consisting of the extracellular and transmembrane domains of the erythropoietin receptor and of the intracellular domain of IL-4Ralpha induces Janus kinase 1 (Jak1) activation, STAT6 activation, and Cepsilon germline transcripts in human B cell line BJAB.")
+if __name__ == '__main__':
+    ##
+    # print(torch.cuda.is_available())
+    bioMedEventExAPI = BioMedEventExAPI()
+    bioMedEventExAPI.pred("We show that ligand-induced homodimerization of chimeric surface receptors consisting of the extracellular and transmembrane domains of the erythropoietin receptor and of the intracellular domain of IL-4Ralpha induces Janus kinase 1 (Jak1) activation, STAT6 activation, and Cepsilon germline transcripts in human B cell line BJAB.")
