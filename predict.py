@@ -57,7 +57,7 @@ torch.backends.cudnn.benchmark = False
 #                     level=logging.INFO)
 
 # logger = logging.getLogger(__name__)
-def main(args, tmp_file_dir):
+def main(args, tmp_file_dir, base_dir='.'):
 
     data_dir = args.data_dir
     data_test = pickle.load(open(os.path.join(args.data_dir, args.test_pkl), 'rb'))
@@ -117,16 +117,16 @@ def main(args, tmp_file_dir):
 
         merged_pkl = f'{tmp_file_dir}/{args.out_test_pkl}'
         write_pkl(args, data_out, test_abs_spans, test_doc_ids, merged_pkl, gold_tri=False)
-        unmerge_normalize(args, tmp_file_dir, args.output_dir.split('/')[-1], merged_pkl)
+        unmerge_normalize(args, tmp_file_dir, args.output_dir.split('/')[-1], merged_pkl, base_dir)
 
     
-def unmerge_normalize(args, tmp_file_dir, model_name, merged_pkl):
+def unmerge_normalize(args, tmp_file_dir, model_name, merged_pkl, base_dir):
     '''
     Call unmerge & normalize on test set
     '''
 
     
-    unmerge_cmd=f'python unmerg_write.py -pred_pkl={merged_pkl}'\
+    unmerge_cmd=f'python {base_dir}/unmerg_write.py -pred_pkl={merged_pkl}'\
     f' -protIdBySpan={tmp_file_dir}/{args.doc_id}_protIdBySpan.pkl'\
     f' -origIdById={tmp_file_dir}/{args.doc_id}_origIdById.pkl'\
     f' -out_dir={tmp_file_dir}'\
@@ -137,7 +137,7 @@ def unmerge_normalize(args, tmp_file_dir, model_name, merged_pkl):
 
     
     # normalization
-    normalize_cmd = f'./eval/tools/a2-normalize.pl -g {tmp_file_dir}/ -u {tmp_file_dir}/*.a2'
+    normalize_cmd = f'{base_dir}/eval/tools/a2-normalize.pl -g {tmp_file_dir}/ -u {tmp_file_dir}/*.a2'
     p = subprocess.Popen(normalize_cmd, stdout=subprocess.PIPE, shell=True)
     output, err = p.communicate()
 
@@ -354,7 +354,7 @@ class BioMedEventExAPI():
         args.out_test_pkl = f'{doc_id}_merged.pkl'
 
         # run event extraction    
-        main(args, tmp_file_dir)
+        main(args, tmp_file_dir, base_dir=self.args.base_dir)
 
         # read a2 and output json    
         output = create_json_output(tmp_file_dir, doc_id)
@@ -364,7 +364,6 @@ class BioMedEventExAPI():
             if doc_id in filename:
                 os.remove(filename) 
 
-        print(output)
         return output
 
 if __name__ == '__main__':
