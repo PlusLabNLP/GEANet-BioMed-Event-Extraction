@@ -1,12 +1,22 @@
-# Biomedical Event Extraction on CORD-19
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/biomedical-event-extraction-on-graph-edge/event-extraction-on-genia)](https://paperswithcode.com/sota/event-extraction-on-genia?p=biomedical-event-extraction-on-graph-edge)
+
+# Biomedical Event Extraction with Hierarchical Knowledge Graphs
 <div align="center">
 <a href="https://pluslabnlp.github.io/"><img src="https://pluslabnlp.github.io/images/Logos/logo_transparent_background.png" height="120" ></a>
 <a href="https://www.isi.edu/"><img src="https://pluslabnlp.github.io/images/usc-logo.png"  height="120"></a>
 </div>
 
-
 ## Introduction
-With the increasing concern about the COVID-19 pandemic, researchers have been putting much effort in providing useful insights into the [COVID-19 Open Research Dataset Challenge (CORD-19)](https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge/). This repo demonstrates how we extract biomedical events with [SciBERT](https://github.com/allenai/scibert), a BERT trained on scientific corpus, which was fine-tuned on the [GENIA BioNLP shared task 2011](http://2011.bionlp-st.org/home/genia-event-extraction-genia). We took reference from the pipeline described in [Bjorne et al.](https://pdfs.semanticscholar.org/97c9/b4ef33af9d084996c7a93c8dc520d56fc925.pdf), where the pipeline can be broken into 3 stages: trigger detection, edge/argument detection and unmerging. The extracted events can be found [here](https://drive.google.com/file/d/1FXN2QRBoFzQmLwQztUhULm8WVKxyRwu3/view?usp=sharing).
+This repo hosts the code for the paper [Biomedical Event Extraction with Hierarchical Knowledge Graphs](https://arxiv.org/abs/2009.09335). We represent knowledge from UMLS in hierarchical knowledge graphs, and integrate knowledge into pre-trained contextual representations with a proposed graph neural networks, Graph Edge-conditioned Attention Neural Networks (GEANet). Currently, only **SciBERT Baseline** is available, and our best performing model **GEANet-SciBERT** will soon be released.
+
+| Model        | Dev Set F1           | Test Set F1  |
+| ------------- |-------------:| -----:|
+|   SciBERT Baseline    | 59.33      |   58.50  |
+|   GEANet-SciBERT     | 60.38      |   60.06  |
+| [Previous SOTA](https://www.aclweb.org/anthology/N19-1145.pdf) | N/A      |   58.65  |
+
+## CORD-19
+With the increasing concern about the COVID-19 pandemic, researchers have been putting much effort in providing useful insights into the [COVID-19 Open Research Dataset Challenge (CORD-19)](https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge/). This repo also demonstrates how we extract biomedical events with [SciBERT](https://github.com/allenai/scibert), a BERT trained on scientific corpus, which was fine-tuned on the [GENIA BioNLP shared task 2011](http://2011.bionlp-st.org/home/genia-event-extraction-genia). We took reference from the pipeline described in [Bjorne et al.](https://pdfs.semanticscholar.org/97c9/b4ef33af9d084996c7a93c8dc520d56fc925.pdf), where the pipeline can be broken into 3 stages: trigger detection, edge/argument detection and unmerging. The extracted events can be found [here](https://drive.google.com/file/d/1FXN2QRBoFzQmLwQztUhULm8WVKxyRwu3/view?usp=sharing).
 
 <p align="center"><img src="https://github.com/jbjorne/TEES/wiki/TEES-process.png"   style="margin:auto"></p>
 
@@ -57,11 +67,3 @@ Call the `biomedical_evet_extraction ` function in the `predict.py` script. This
 └── weights
 
 ```
-
-
-## Performance
-Currently, this repo contains only the fine-tuned SciBERT on the GENIA dataset, whose performance is on par with the previous SOTA result. The best performing model with knowledge incorporation from [UMLS](https://www.nlm.nih.gov/research/umls/index.html), a large biomedical knowledge grapah, using GNN will soon be released.
-| Model        | Dev Set F1           | Test Set F1  |
-| ------------- |-------------:| -----:|
-|   SciBERT Baseline    | 59.33      |   58.50  |
-| [Previous SOTA](https://www.aclweb.org/anthology/N19-1145.pdf) | N/A      |   58.65  |
