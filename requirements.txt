@@ -81,7 +81,7 @@ QtPy==1.9.0
 rdflib==5.0.0
 regex==2020.6.8
 requests==2.24.0
-rsa==3.4.2
+rsa==4.1
 s3transfer==0.3.3
 sacremoses==0.0.43
 scikit-image==0.17.2
