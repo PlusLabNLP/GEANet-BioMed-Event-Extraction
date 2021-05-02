@@ -67,3 +67,21 @@ Call the `biomedical_evet_extraction ` function in the `predict.py` script. This
 └── weights
 
 ```
+## Citation
+```bibtex
+@inproceedings{huang-etal-2020-biomedical,
+    title = "Biomedical Event Extraction with Hierarchical Knowledge Graphs",
+    author = "Huang, Kung-Hsiang  and
+      Yang, Mu  and
+      Peng, Nanyun",
+    booktitle = "Findings of the Association for Computational Linguistics: EMNLP 2020",
+    month = nov,
+    year = "2020",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/2020.findings-emnlp.114",
+    doi = "10.18653/v1/2020.findings-emnlp.114",
+    pages = "1277--1285",
+    abstract = "Biomedical event extraction is critical in understanding biomolecular interactions described in scientific corpus. One of the main challenges is to identify nested structured events that are associated with non-indicative trigger words. We propose to incorporate domain knowledge from Unified Medical Language System (UMLS) to a pre-trained language model via Graph Edge-conditioned Attention Networks (GEANet) and hierarchical graph representation. To better recognize the trigger words, each sentence is first grounded to a sentence graph based on a jointly modeled hierarchical knowledge graph from UMLS. The grounded graphs are then propagated by GEANet, a novel graph neural networks for enhanced capabilities in inferring complex events. On BioNLP 2011 GENIA Event Extraction task, our approach achieved 1.41{\%} F1 and 3.19{\%} F1 improvements on all events and complex events, respectively. Ablation studies confirm the importance of GEANet and hierarchical KG.",
+}
+```
