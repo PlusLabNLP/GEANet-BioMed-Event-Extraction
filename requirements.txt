@@ -105,7 +105,7 @@ tornado==6.0.4
 tqdm==4.46.1
 traitlets==4.3.3
 transformers==2.5.0
-urllib3==1.25.9
+urllib3==1.26.5
 wasabi==0.6.0
 wcwidth==0.2.4
 webencodings==0.5.1
