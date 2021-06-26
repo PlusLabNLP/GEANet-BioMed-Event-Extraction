@@ -275,7 +275,8 @@ class MultitaskClassifierBase(nn.Module):
         super(MultitaskClassifierBase, self).__init__()     
 
     def forward(self, input_ids, entity_labels,
-                attention_mask=None, token_type_ids=None, kg_datas=None, position_ids=None, head_mask=None, rel_idxs=[], lidx=[], ridx=[], task='relation', args=None):
+                attention_mask=None, token_type_ids=None, kg_datas=None, position_ids=None, head_mask=None,
+                rel_idxs=None, lidx=[], ridx=[], task='relation', args=None):[], task='relation', args=None):
         '''
         entity_labels are just for extracting proteins
         '''
