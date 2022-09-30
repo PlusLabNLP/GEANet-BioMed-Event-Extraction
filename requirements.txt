@@ -32,7 +32,7 @@ isodate==0.6.0
 jedi==0.17.1
 Jinja2==2.11.2
 jmespath==0.10.0
-joblib==0.14.1
+joblib==1.2.0
 jsonschema==3.2.0
 jupyter==1.0.0
 jupyter-client==6.1.3
